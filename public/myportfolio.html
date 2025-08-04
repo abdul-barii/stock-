@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>My Portfolio</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f7f9fc;
+    }
+
+    .navbar {
+      background-color: #ffffff;
+      padding: 20px 40px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .navbar h1 {
+      font-size: 26px;
+      color: #2c3e50;
+      margin: 0;
+      font-weight: bold;
+    }
+
+    .nav-center {
+      display: flex;
+      gap: 35px;
+      align-items: center;
+      justify-content: center;
+      flex: 1;
+    }
+
+    .nav-center a {
+      text-decoration: none;
+      color: #2c3e50;
+      font-weight: bold;
+      font-size: 18px;
+      transition: color 0.2s, background 0.2s;
+      padding: 10px 14px;
+      border-radius: 6px;
+    }
+
+    .nav-center a:hover {
+      background: #f0f4ff;
+      color: #007bff;
+    }
+
+    .logout-btn {
+      background: #ff4d4d;
+      color: white;
+      border: none;
+      padding: 10px 18px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 15px;
+      font-weight: bold;
+    }
+
+    .logout-btn:hover {
+      background: #d93636;
+    }
+
+    .container {
+      margin: 30px 50px;
+    }
+
+    h2 {
+      margin-bottom: 20px;
+      color: #2c3e50;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: white;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+
+    th, td {
+      padding: 14px;
+      text-align: center;
+      border-bottom: 1px solid #eee;
+    }
+
+    th {
+      background: #f4f6fa;
+      font-weight: bold;
+      color: #2c3e50;
+    }
+
+    tr:hover {
+      background: #f9fbff;
+    }
+
+    .empty-msg {
+      text-align: center;
+      padding: 20px;
+      color: #777;
+      font-size: 18px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ✅ Navbar -->
+  <div class="navbar">
+    <h1>📈 StockTrade</h1>
+
+    <div class="nav-center">
+      <a href="dashboard.html">Explore</a>
+      <a href="watchlist.html">Watchlist</a>
+      <a href="myportfolio.html">My Portfolio</a>
+      <a href="transactions.html">Transactions</a>
+      <a href="profile.html">My Profile</a>
+    </div>
+
+    <button class="logout-btn" id="logoutBtn">Logout</button>
+  </div>
+
+  <!-- ✅ Main Content -->
+  <div class="container">
+    <h2>📊 My Portfolio</h2>
+
+    <table id="portfolioTable">
+      <thead>
+        <tr>
+          <th>Company</th>
+          <th>Ticker</th>
+          <th>Quantity</th>
+          <th>Buy Price</th>
+        </tr>
+      </thead>
+      <tbody id="portfolioBody">
+        <!-- Rows will be injected here -->
+      </tbody>
+    </table>
+
+    <p id="emptyMessage" class="empty-msg" style="display:none;">
+      You don’t own any stocks yet. Explore and buy stocks to start building your portfolio!
+    </p>
+  </div>
+
+<script>
+  document.getElementById('logoutBtn').addEventListener('click', () => {
+    localStorage.clear();
+    window.location.href = 'login.html';
+  });
+
+  async function loadPortfolio() {
+    try {
+      const user_id = localStorage.getItem('user_id');
+      if (!user_id) {
+        alert("❌ No user ID found. Please login again.");
+        return;
+      }
+
+      const res = await fetch(`/api/transactions/${user_id}`);
+      const transactions = await res.json();
+      console.log("✅ Transactions for Portfolio:", transactions);
+
+      // ✅ Case-insensitive 'buy' filter
+      const buys = transactions.filter(tx =>
+        String(tx.transaction_type).toLowerCase() === 'buy'
+      );
+      console.log("✅ Buy transactions only:", buys);
+
+      const holdings = {};
+
+      buys.forEach(tx => {
+        const { ticker_symbol, company_name, quantity, price_per_share } = tx;
+
+        if (!ticker_symbol || !company_name) return;
+
+        console.log("📦 Processing:", ticker_symbol, quantity, price_per_share);
+
+        if (!holdings[ticker_symbol]) {
+          holdings[ticker_symbol] = {
+            company_name,
+            totalQty: 0,
+            totalCost: 0,
+          };
+        }
+
+        holdings[ticker_symbol].totalQty += Number(quantity);
+        holdings[ticker_symbol].totalCost += Number(quantity) * Number(price_per_share);
+      });
+
+      const table = document.getElementById('portfolioBody');
+      table.innerHTML = '';
+
+      const symbols = Object.keys(holdings);
+
+      if (symbols.length === 0) {
+        console.log("❌ No valid holdings after grouping.");
+        document.getElementById('emptyMessage').style.display = 'block';
+        document.getElementById('portfolioTable').style.display = 'none';
+        return;
+      }
+
+      symbols.forEach(symbol => {
+        const h = holdings[symbol];
+        const avgPrice = h.totalCost / h.totalQty;
+
+        const row = `
+          <tr>
+            <td>${h.company_name}</td>
+            <td>${symbol}</td>
+            <td>${h.totalQty}</td>
+            <td>₹${avgPrice.toFixed(2)}</td>
+          </tr>
+        `;
+        table.innerHTML += row;
+      });
+
+    } catch (err) {
+      console.error("❌ Error loading portfolio:", err);
+      alert('❌ Error loading portfolio');
+    }
+  }
+
+  loadPortfolio();
+</script>
+
+
+
+
+</body>
+</html>

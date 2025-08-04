@@ -1,54 +1,53 @@
-/*
-const { Router } = require('express');
-const { IndexController } = require('../controllers'); // Fixed import
-
-const router = Router();
-const indexController = new IndexController();  // Only create the instance once
-
-function setRoutes(app) {
-    app.use('/api/transactions', router); // Changed route path to '/api/transactions'
-    router.get('/', indexController.getTransactions.bind(indexController));
-    router.post('/', indexController.createTransactions.bind(indexController));
-
-    app.use('/api/companies', router); // Changed route path to '/api/transactions'
-    router.get('/', indexController.getCompanies.bind(indexController));
-    router.post('/', indexController.createCompanies.bind(indexController));
-
-    app.use('/api/users', router); // Changed route path to '/api/transactions'
-    router.get('/', indexController.getUsers.bind(indexController));
-    router.post('/', indexController.createUsers.bind(indexController));
-
-
-}
-
-module.exports = { setRoutes }; */
-
-
 const { Router } = require('express');
 const { IndexController } = require('../controllers');
 
-const indexController = new IndexController();  // Create once
+const indexController = new IndexController();
 
 function setRoutes(app) {
-    // Router for Companies
+    console.log("✅ setRoutes() called - routes are loading");
+
+    // ✅ LOGIN route (NEW)
+    app.post('/api/login', indexController.loginUser.bind(indexController));
+
+    // ✅ Companies routes
     const companiesRouter = Router();
     companiesRouter.get('/', indexController.getCompanies.bind(indexController));
     companiesRouter.post('/', indexController.createCompanies.bind(indexController));
+    companiesRouter.put('/:id', indexController.updateCompany.bind(indexController));
+    companiesRouter.delete('/:id', indexController.deleteCompany.bind(indexController));
     app.use('/api/companies', companiesRouter);
 
-    // Router for Transactions
-    const transactionsRouter = Router();
-    transactionsRouter.get('/', indexController.getTransactions.bind(indexController));
+   const transactionsRouter = Router();
+
+    // ✅ Route: Get all transactions for a user
+    transactionsRouter.get('/:user_id', indexController.getTransactions.bind(indexController));
+
+    // ✅ Route: Create a new transaction
     transactionsRouter.post('/', indexController.createTransactions.bind(indexController));
+
+    // ✅ Route: Update a transaction by ID
+    transactionsRouter.put('/:id', indexController.updateTransaction.bind(indexController));
+
+    // ✅ Route: Delete a transaction by ID
+    transactionsRouter.delete('/:id', indexController.deleteTransaction.bind(indexController));
+
     app.use('/api/transactions', transactionsRouter);
 
-    // Router for Users
+
+    // ✅ Users routes
     const usersRouter = Router();
     usersRouter.get('/', indexController.getUsers.bind(indexController));
     usersRouter.post('/', indexController.createUsers.bind(indexController));
+    usersRouter.put('/:id', indexController.updateUser.bind(indexController));
+    usersRouter.delete('/:id', indexController.deleteUser.bind(indexController));
     app.use('/api/users', usersRouter);
+
+    // ✅ Watchlist routes (NEW)
+    const watchlistRouter = Router();
+    watchlistRouter.get('/:user_id', indexController.getWatchlist.bind(indexController));
+    watchlistRouter.post('/', indexController.addToWatchlist.bind(indexController));
+    watchlistRouter.delete('/', indexController.removeFromWatchlist.bind(indexController));
+    app.use('/api/watchlist', watchlistRouter);
 }
 
 module.exports = { setRoutes };
-
-

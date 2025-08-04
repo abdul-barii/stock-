@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>My Watchlist</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f7f9fc;
+    }
+
+    .navbar {
+      background-color: #ffffff;
+      padding: 20px 40px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .navbar h1 {
+      font-size: 26px;
+      color: #2c3e50;
+      margin: 0;
+      font-weight: bold;
+    }
+
+    .nav-center {
+      display: flex;
+      gap: 35px;
+      align-items: center;
+      justify-content: center;
+      flex: 1;
+    }
+
+    .nav-center a {
+      text-decoration: none;
+      color: #2c3e50;
+      font-weight: bold;
+      font-size: 18px;
+      transition: color 0.2s, background 0.2s;
+      padding: 10px 14px;
+      border-radius: 6px;
+    }
+
+    .nav-center a:hover {
+      background: #f0f4ff;
+      color: #007bff;
+    }
+
+    .logout-btn {
+      background: #ff4d4d;
+      color: white;
+      border: none;
+      padding: 10px 18px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 15px;
+      font-weight: bold;
+    }
+
+    .logout-btn:hover {
+      background: #d93636;
+    }
+
+    .container {
+      margin: 20px 40px;
+    }
+
+    .stock-card {
+      background: white;
+      padding: 15px;
+      margin-bottom: 15px;
+      border-radius: 10px;
+      box-shadow: 0px 2px 8px rgba(0,0,0,0.05);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .stock-info strong {
+      font-size: 18px;
+      color: #2c3e50;
+    }
+
+    .stock-info small {
+      color: #777;
+    }
+
+    .remove-btn {
+      padding: 6px 10px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 13px;
+      margin-left: 5px;
+      background-color: #ff4d4d;
+      color: white;
+      font-weight: bold;
+    }
+
+    .remove-btn:hover {
+      background-color: #d93636;
+    }
+
+    .empty-msg {
+      text-align: center;
+      margin-top: 50px;
+      font-size: 18px;
+      color: #555;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ✅ Navbar -->
+  <div class="navbar">
+    <h1>📈 StockTrade</h1>
+    <div class="nav-center">
+      <a href="dashboard.html">Explore</a>
+      <a href="watchlist.html">Watchlist</a>
+      <a href="myportfolio.html">My Portfolio</a>
+      <a href="transactions.html">Transactions</a>
+      <a href="profile.html">My Profile</a>
+    </div>
+    <button class="logout-btn" id="logoutBtn">Logout</button>
+  </div>
+
+  <!-- ✅ Main Content -->
+  <div class="container">
+    <h2>⭐ My Watchlist</h2>
+    <div id="watchlistContainer"></div>
+  </div>
+
+  <script>
+    const user_id = localStorage.getItem('user_id');
+
+    if (!user_id) {
+      alert('Please log in again.');
+      window.location.href = 'login.html';
+    }
+
+    document.getElementById('logoutBtn').addEventListener('click', () => {
+      localStorage.clear();
+      window.location.href = 'login.html';
+    });
+
+    async function loadWatchlist() {
+      const container = document.getElementById('watchlistContainer');
+      container.innerHTML = '';
+
+      try {
+        const res = await fetch(`/api/watchlist/${user_id}`);
+        const data = await res.json();
+
+        if (!Array.isArray(data) || data.length === 0) {
+          container.innerHTML = '<p class="empty-msg">⚠️ Your watchlist is empty. Add stocks from the dashboard.</p>';
+          return;
+        }
+
+        data.forEach((stock) => {
+          const card = document.createElement('div');
+          card.className = 'stock-card';
+          card.innerHTML = `
+            <div class="stock-info">
+              <strong>${stock.ticker_symbol}</strong> - ${stock.company_name}<br>
+              <small>🆔 Watch ID: ${stock.id}</small>
+            </div>
+            <div>
+              <button class="remove-btn" onclick="removeFromWatchlist('${stock.ticker_symbol}')">❌ Remove</button>
+            </div>
+          `;
+          container.appendChild(card);
+        });
+      } catch (err) {
+        console.error('Error loading watchlist:', err);
+        container.innerHTML = '<p class="empty-msg">❌ Error loading watchlist. Try again later.</p>';
+      }
+    }
+
+    async function removeFromWatchlist(ticker_symbol) {
+      try {
+        const res = await fetch('/api/watchlist/remove', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ user_id, ticker_symbol })
+        });
+
+        if (res.ok) {
+          loadWatchlist();
+        } else {
+          const err = await res.json();
+          alert(err.message || 'Failed to remove from watchlist.');
+        }
+      } catch (error) {
+        console.error('Error removing stock:', error);
+        alert('Something went wrong.');
+      }
+    }
+
+    loadWatchlist();
+  </script>
+</body>
+</html>

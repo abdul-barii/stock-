@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Stock Dashboard</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f7f9fc;
+    }
+
+    /* ✅ Navbar */
+    .navbar {
+      background-color: #ffffff;
+      padding: 20px 40px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .navbar h1 {
+      font-size: 26px;
+      color: #2c3e50;
+      margin: 0;
+      font-weight: bold;
+    }
+
+    /* ✅ Navbar Center Menu */
+    .nav-center {
+      display: flex;
+      gap: 35px;
+      align-items: center;
+      justify-content: center;
+      flex: 1;
+    }
+
+    .nav-center a {
+      text-decoration: none;
+      color: #2c3e50;
+      font-weight: bold;
+      font-size: 18px;
+      transition: color 0.2s, background 0.2s;
+      padding: 10px 14px;
+      border-radius: 6px;
+    }
+
+    .nav-center a:hover {
+      background: #f0f4ff;
+      color: #007bff;
+    }
+
+    /* ✅ Logout Button */
+    .logout-btn {
+      background: #ff4d4d;
+      color: white;
+      border: none;
+      padding: 10px 18px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 15px;
+      font-weight: bold;
+    }
+    .logout-btn:hover {
+      background: #d93636;
+    }
+
+    /* ✅ Main Content Layout */
+    .container {
+      margin: 20px 40px;
+    }
+
+    /* ✅ Search Bar */
+    .search-bar {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+
+    .search-bar input {
+      width: 50%;
+      padding: 12px;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      outline: none;
+    }
+
+    /* ✅ Stock Cards */
+    .stock-card {
+      background: white;
+      padding: 15px;
+      margin-bottom: 15px;
+      border-radius: 10px;
+      box-shadow: 0px 2px 8px rgba(0,0,0,0.05);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .stock-info strong {
+      font-size: 18px;
+      color: #2c3e50;
+    }
+
+    .stock-info small {
+      color: #777;
+    }
+
+    .stock-actions {
+      text-align: right;
+    }
+
+    .quantity-input {
+      width: 60px;
+      padding: 5px;
+      margin-right: 5px;
+      text-align: center;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+    }
+
+    .buy-btn, .sell-btn, .watchlist-btn {
+      padding: 6px 10px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 13px;
+      margin-left: 5px;
+    }
+
+    .buy-btn {
+      background-color: #28a745;
+      color: white;
+    }
+    .buy-btn:hover {
+      background-color: #218838;
+    }
+
+    .sell-btn {
+      background-color: #ff4d4d;
+      color: white;
+    }
+    .sell-btn:hover {
+      background-color: #d93636;
+    }
+
+    /* ✅ Watchlist Button */
+    .watchlist-btn {
+      background-color: #f1c40f;
+      color: white;
+      font-weight: bold;
+    }
+    .watchlist-btn:hover {
+      background-color: #d4ac0d;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ✅ Navbar -->
+  <div class="navbar">
+    <h1>📈 StockTrade</h1>
+
+    <!-- ✅ Center Navigation -->
+    <div class="nav-center">
+  <a href="dashboard.html">Explore</a>
+  <a href="watchlist.html">Watchlist</a>
+  <a href="myportfolio.html">My Portfolio</a>
+  <a href="transactions.html">Transactions</a>
+  <a href="profile.html">My Profile</a>
+</div>
+
+    <button class="logout-btn" id="logoutBtn">Logout</button>
+  </div>
+
+  <!-- ✅ Main Content -->
+  <div class="container">
+
+    <!-- 🔍 Search Bar (NOW ABOVE the heading) -->
+    <div class="search-bar">
+      <input type="text" id="searchInput" placeholder="Search stocks by name or ticker...">
+    </div>
+
+    <h2>Available Stocks</h2>
+    <div id="stocksList">Loading stocks...</div>
+  </div>
+
+  <script>
+    // ✅ Logout
+    document.getElementById('logoutBtn').addEventListener('click', () => {
+      localStorage.clear();
+      window.location.href = 'login.html';
+    });
+
+    // ✅ Load Stocks
+    async function loadStocks() {
+      try {
+        const res = await fetch('/api/companies');
+        const companies = await res.json();
+        const stocksDiv = document.getElementById('stocksList');
+
+        if (companies.length === 0) {
+          stocksDiv.innerHTML = "<p>No stocks available.</p>";
+          return;
+        }
+
+        stocksDiv.innerHTML = '';
+        companies.forEach(stock => {
+          const stockCard = document.createElement('div');
+          stockCard.className = 'stock-card';
+          stockCard.innerHTML = `
+            <div class="stock-info">
+              <strong>${stock.ticker_symbol}</strong> - ${stock.company_name}<br>
+              <small>💰 ₹${stock.stock_price}</small>
+            </div>
+            <div class="stock-actions">
+              <input type="number" class="quantity-input" id="qty-${stock.company_id}" min="1" placeholder="Qty" />
+              <button class="buy-btn" onclick="buyStock(${stock.company_id}, '${stock.company_name}', '${stock.ticker_symbol}', ${stock.stock_price})">Buy</button>
+              <button class="sell-btn" onclick="sellStock(${stock.company_id}, '${stock.company_name}', '${stock.ticker_symbol}', ${stock.stock_price})">Sell</button>
+              <button class="watchlist-btn" onclick="addToWatchlist('${stock.company_name}', '${stock.ticker_symbol}', ${stock.stock_price})">⭐ Watchlist</button>
+            </div>
+          `;
+          stocksDiv.appendChild(stockCard);
+        });
+
+      } catch (err) {
+        console.error(err);
+        document.getElementById('stocksList').innerHTML = "<p>Error loading stocks.</p>";
+      }
+    }
+
+    // ✅ Add to Watchlist (SQL-based)
+    async function addToWatchlist(company_name, ticker_symbol) {
+      const user_id = localStorage.getItem('user_id');
+
+      if (!user_id) {
+        return alert("❌ You must be logged in.");
+      }
+
+      try {
+        const res = await fetch('/api/watchlist', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ user_id, company_name, ticker_symbol })
+        });
+
+        if (res.status === 409) {
+          alert("⚠️ Already in your watchlist.");
+        } else if (res.ok) {
+          alert(`⭐ ${company_name} added to your Watchlist!`);
+        } else {
+          const data = await res.json();
+          alert("❌ Failed to add to Watchlist. " + (data?.message || ""));
+        }
+      } catch (err) {
+        console.error(err);
+        alert("❌ Error adding to Watchlist.");
+      }
+    }
+
+
+    // ✅ Search filter function
+    document.getElementById('searchInput').addEventListener('input', function () {
+      const query = this.value.toLowerCase();
+      const allCards = document.querySelectorAll('.stock-card');
+
+      allCards.forEach(card => {
+        const text = card.textContent.toLowerCase();
+        card.style.display = text.includes(query) ? 'flex' : 'none';
+      });
+    });
+
+    // ✅ Buy Stock
+    async function buyStock(company_id, company_name, ticker_symbol, price) {
+      const qtyField = document.getElementById(`qty-${company_id}`);
+      const qty = qtyField.value;
+
+      if (!qty || isNaN(qty) || qty <= 0) return alert("❌ Please enter a valid quantity");
+
+      try {
+        const res = await fetch('/api/transactions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            user_id: localStorage.getItem('user_id') || 1,
+            username: localStorage.getItem('name'),
+            company_name,
+            ticker_symbol,
+            transaction_type: 'buy',
+            quantity: parseInt(qty),
+            price_per_share: price
+          })
+        });
+
+        if (res.ok) {
+          alert(`✅ Bought ${qty} shares of ${company_name}`);
+          qtyField.value = '';
+        } else {
+          alert("❌ Failed to buy stock");
+        }
+      } catch (err) {
+        console.error(err);
+        alert("❌ Error buying stock");
+      }
+    }
+
+    // ✅ Sell Stock
+    async function sellStock(company_id, company_name, ticker_symbol, price) {
+      const qtyField = document.getElementById(`qty-${company_id}`);
+      const qty = qtyField.value;
+
+      if (!qty || isNaN(qty) || qty <= 0) return alert("❌ Please enter a valid quantity");
+
+      try {
+        const res = await fetch('/api/transactions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            user_id: localStorage.getItem('user_id') || 1,
+            username: localStorage.getItem('name'),
+            company_name,
+            ticker_symbol,
+            transaction_type: 'sell',
+            quantity: parseInt(qty),
+            price_per_share: price
+          })
+        });
+
+        if (res.ok) {
+          alert(`✅ Sold ${qty} shares of ${company_name}`);
+          qtyField.value = '';
+        } else {
+          alert("❌ Failed to sell stock");
+        }
+      } catch (err) {
+        console.error(err);
+        alert("❌ Error selling stock");
+      }
+    }
+
+    // ✅ Load on start
+    loadStocks();
+  </script>
+
+  <!-- ✅ Footer -->
+<footer class="footer">
+  <p>© 2025 StockTrade | All Rights Reserved</p>
+  <p><a href="#">Privacy Policy</a> | <a href="#">Terms of Service</a> | <a href="#">Contact</a></p>
+</footer>
+
+<style>
+  .footer {
+    background-color: #ffffff;
+    padding: 15px;
+    text-align: center;
+    font-size: 14px;
+    color: #555;
+    border-top: 1px solid #ddd;
+    margin-top: 50px;
+  }
+  .footer a {
+    color: #007bff;
+    text-decoration: none;
+    margin: 0 5px;
+  }
+  .footer a:hover {
+    text-decoration: underline;
+  }
+</style>
+
+
+</body>
+</html>

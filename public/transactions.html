@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>My Transactions</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f7f9fc;
+    }
+
+    .navbar {
+      background-color: #ffffff;
+      padding: 20px 40px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .navbar h1 {
+      font-size: 26px;
+      color: #2c3e50;
+      margin: 0;
+      font-weight: bold;
+    }
+
+    .nav-center {
+      display: flex;
+      gap: 35px;
+      align-items: center;
+      justify-content: center;
+      flex: 1;
+    }
+
+    .nav-center a {
+      text-decoration: none;
+      color: #2c3e50;
+      font-weight: bold;
+      font-size: 18px;
+      transition: color 0.2s, background 0.2s;
+      padding: 10px 14px;
+      border-radius: 6px;
+    }
+
+    .nav-center a:hover {
+      background: #f0f4ff;
+      color: #007bff;
+    }
+
+    .logout-btn {
+      background: #ff4d4d;
+      color: white;
+      border: none;
+      padding: 10px 18px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 15px;
+      font-weight: bold;
+    }
+
+    .logout-btn:hover {
+      background: #d93636;
+    }
+
+    .container {
+      margin: 20px 40px;
+    }
+
+    h2 {
+      color: #333;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+      background: #fff;
+      box-shadow: 0px 2px 8px rgba(0,0,0,0.1);
+    }
+
+    th, td {
+      padding: 10px;
+      border-bottom: 1px solid #ddd;
+      text-align: left;
+    }
+
+    th {
+      background: #007bff;
+      color: white;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ✅ Navbar -->
+  <div class="navbar">
+    <h1>📈 StockTrade</h1>
+
+    <div class="nav-center">
+      <a href="dashboard.html">Explore</a>
+      <a href="watchlist.html">Watchlist</a>
+      <a href="myportfolio.html">My Portfolio</a>
+      <a href="transactions.html">Transactions</a>
+      <a href="profile.html">My Profile</a>
+    </div>
+
+    <button class="logout-btn" id="logoutBtn">Logout</button>
+  </div>
+
+  <!-- ✅ Transactions Content -->
+  <div class="container">
+    <h2>📜 My Transactions</h2>
+
+    <table id="transactionsTable">
+      <thead>
+        <tr>
+          <th>Company</th>
+          <th>Ticker</th>
+          <th>Type</th>
+          <th>Quantity</th>
+          <th>Price (₹)</th>
+          <th>Total (₹)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td colspan="6" style="text-align:center;">Loading transactions...</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <script>
+    document.getElementById('logoutBtn').addEventListener('click', () => {
+      localStorage.clear();
+      window.location.href = 'login.html';
+    });
+
+    async function loadTransactions() {
+      const user_id = localStorage.getItem('user_id');
+
+      if (!user_id) {
+        alert("User not logged in. Please log in first.");
+        window.location.href = "login.html";
+        return;
+      }
+
+      try {
+        const res = await fetch(`/api/transactions/${user_id}`);
+        const transactions = await res.json();
+
+        const tableBody = document.querySelector("#transactionsTable tbody");
+
+        if (!Array.isArray(transactions) || transactions.length === 0) {
+          tableBody.innerHTML = `<tr><td colspan="6" style="text-align:center;">No transactions found.</td></tr>`;
+          return;
+        }
+
+        tableBody.innerHTML = '';
+        transactions.forEach(tx => {
+          const total = tx.quantity * tx.price_per_share;
+          tableBody.innerHTML += `
+            <tr>
+              <td>${tx.company_name}</td>
+              <td>${tx.ticker_symbol}</td>
+              <td>${tx.transaction_type.toUpperCase()}</td>
+              <td>${tx.quantity}</td>
+              <td>₹${tx.price_per_share}</td>
+              <td>₹${total.toFixed(2)}</td>
+            </tr>
+          `;
+        });
+
+      } catch (err) {
+        console.error(err);
+        document.querySelector("#transactionsTable tbody").innerHTML =
+          `<tr><td colspan="6" style="text-align:center;">Error loading transactions.</td></tr>`;
+      }
+    }
+
+    loadTransactions();
+  </script>
+
+</body>
+</html>

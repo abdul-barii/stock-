@@ -4,7 +4,7 @@ const connectToDatabase =async () =>{
     const connection = await createConnection({
         host :"localhost",
         user: 'root',
-        password: 'n3u3da!',
+        password: 'kuro',
         database : 'stocks',
     });
 

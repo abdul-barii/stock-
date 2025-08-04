@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>User Profile</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f7f9fc;
+    }
+
+    .navbar {
+      background-color: #ffffff;
+      padding: 20px 40px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .navbar h1 {
+      font-size: 26px;
+      color: #2c3e50;
+      margin: 0;
+      font-weight: bold;
+    }
+
+    .nav-center {
+      display: flex;
+      gap: 35px;
+      align-items: center;
+      justify-content: center;
+      flex: 1;
+    }
+
+    .nav-center a {
+      text-decoration: none;
+      color: #2c3e50;
+      font-weight: bold;
+      font-size: 18px;
+      padding: 10px 14px;
+      border-radius: 6px;
+    }
+
+    .nav-center a:hover {
+      background: #f0f4ff;
+      color: #007bff;
+    }
+
+    .logout-btn {
+      background: #ff4d4d;
+      color: white;
+      border: none;
+      padding: 10px 18px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 15px;
+      font-weight: bold;
+    }
+
+    .logout-btn:hover {
+      background: #d93636;
+    }
+
+    .container {
+      margin: 40px auto;
+      max-width: 600px;
+      background: #ffffff;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0px 2px 8px rgba(0,0,0,0.1);
+    }
+
+    h2 {
+      margin-bottom: 20px;
+      color: #2c3e50;
+      text-align: center;
+    }
+
+    .info-row {
+      margin-bottom: 15px;
+    }
+
+    .info-label {
+      font-weight: bold;
+      color: #333;
+    }
+
+    .info-value {
+      margin-top: 4px;
+      font-size: 18px;
+      color: #555;
+    }
+
+    input {
+      width: 100%;
+      padding: 10px;
+      margin-top: 5px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 16px;
+    }
+
+    .btn {
+      padding: 10px 16px;
+      border: none;
+      border-radius: 6px;
+      font-size: 15px;
+      cursor: pointer;
+      margin-top: 20px;
+    }
+
+    .edit-btn {
+      background-color: #f1c40f;
+      color: white;
+    }
+
+    .edit-btn:hover {
+      background-color: #d4ac0d;
+    }
+
+    .save-btn {
+      background-color: #007bff;
+      color: white;
+    }
+
+    .save-btn:hover {
+      background-color: #0056b3;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="navbar">
+    <h1>📈 StockTrade</h1>
+    <div class="nav-center">
+      <a href="dashboard.html">Explore</a>
+      <a href="watchlist.html">Watchlist</a>
+      <a href="myportfolio.html">My Portfolio</a>
+      <a href="transactions.html">Transactions</a>
+      <a href="profile.html">My Profile</a>
+    </div>
+    <button class="logout-btn" id="logoutBtn">Logout</button>
+  </div>
+
+  <div class="container">
+    <h2>👤 My Profile</h2>
+
+    <div class="info-row">
+      <label class="info-label">Name:</label>
+      <div id="nameDisplay" class="info-value"></div>
+      <input type="text" id="nameInput" style="display: none;" />
+    </div>
+
+    <div class="info-row">
+      <label class="info-label">Email:</label>
+      <div id="emailDisplay" class="info-value"></div>
+      <input type="email" id="emailInput" style="display: none;" />
+    </div>
+
+    <button class="btn edit-btn" id="editBtn" onclick="enableEdit()">✏️ Edit</button>
+    <button class="btn save-btn" id="saveBtn" style="display: none;" onclick="saveChanges()">💾 Save</button>
+  </div>
+
+  <script>
+    const name = localStorage.getItem('name');
+    const email = localStorage.getItem('email');
+    const userId = localStorage.getItem('user_id');
+
+    // Redirect if not logged in
+    if (!name || !email || !userId) {
+      window.location.href = 'login.html';
+    }
+
+    document.getElementById('nameDisplay').innerText = name;
+    document.getElementById('emailDisplay').innerText = email;
+    document.getElementById('nameInput').value = name;
+    document.getElementById('emailInput').value = email;
+
+    function enableEdit() {
+      document.getElementById('nameDisplay').style.display = 'none';
+      document.getElementById('emailDisplay').style.display = 'none';
+      document.getElementById('editBtn').style.display = 'none';
+
+      document.getElementById('nameInput').style.display = 'block';
+      document.getElementById('emailInput').style.display = 'block';
+      document.getElementById('saveBtn').style.display = 'inline-block';
+    }
+
+    async function saveChanges() {
+      const updatedName = document.getElementById('nameInput').value.trim();
+      const updatedEmail = document.getElementById('emailInput').value.trim();
+
+      if (!updatedName || !updatedEmail) {
+        return alert("❌ Name and email cannot be empty.");
+      }
+
+      try {
+        const res = await fetch(`/api/users/${userId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: updatedName,
+            email: updatedEmail,
+            password_hash: ""
+          })
+        });
+
+        if (res.ok) {
+          localStorage.setItem('name', updatedName);
+          localStorage.setItem('email', updatedEmail);
+          alert("✅ Profile updated!");
+
+          document.getElementById('nameDisplay').innerText = updatedName;
+          document.getElementById('emailDisplay').innerText = updatedEmail;
+
+          document.getElementById('nameDisplay').style.display = 'block';
+          document.getElementById('emailDisplay').style.display = 'block';
+          document.getElementById('editBtn').style.display = 'inline-block';
+
+          document.getElementById('nameInput').style.display = 'none';
+          document.getElementById('emailInput').style.display = 'none';
+          document.getElementById('saveBtn').style.display = 'none';
+        } else {
+          alert("❌ Failed to update profile.");
+        }
+      } catch (error) {
+        console.error(error);
+        alert("❌ Error while updating.");
+      }
+    }
+
+    document.getElementById('logoutBtn').addEventListener('click', () => {
+      localStorage.clear();
+      window.location.href = 'login.html';
+    });
+  </script>
+
+</body>
+</html>
