@@ -33,3 +33,12 @@ CREATE TABLE transactions (
     total_amount DECIMAL(15,2) GENERATED ALWAYS AS (quantity * price_per_share) STORED,
     transaction_date DATETIME DEFAULT CURRENT_TIMESTAMP
 );
+
+  CREATE TABLE Watchlist (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    ticker_symbol VARCHAR(10) NOT NULL,
+    company_name VARCHAR(255),
+    UNIQUE KEY unique_watchlist (user_id, ticker_symbol),
+    FOREIGN KEY (user_id) REFERENCES Users(user_id)
+);
